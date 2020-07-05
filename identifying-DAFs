@@ -1,0 +1,18 @@
+import pandas as pd
+url_2020 = "index_2020.csv"
+df_2020 = pd.read_csv(url_2020)
+df_2020 = df_2020[["RETURN_TYPE","OBJECT_ID"]]
+xml_links = []
+for i in df_2020["OBJECT_ID"]:
+    xml_links.append("https://s3.amazonaws.com/irs-form-990/{}_public.xml".format(i))
+xml_links[0]
+
+import xml.etree.ElementTree as et
+import requests
+ 
+xml_data = requests.get("https://s3.amazonaws.com/irs-form-990/201903199349320465_public.xml").content
+xtree = et.fromstring(xml_data)
+
+for i in xtree.findall(".//"):
+    if 'DonorAdvisedFundInd' in i.tag:
+        print(i.text)
