@@ -9,10 +9,19 @@ xml_links[0]
 
 import xml.etree.ElementTree as et
 import requests
- 
-xml_data = requests.get("https://s3.amazonaws.com/irs-form-990/201903199349320465_public.xml").content
-xtree = et.fromstring(xml_data)
 
-for i in xtree.findall(".//"):
-    if 'DonorAdvisedFundInd' in i.tag:
-        print(i.text)
+df_rows = []
+df_cols = ["ID","DAF"]
+
+a = 0
+for i in xml_links:
+    xml_data = requests.get(xml_links[a]).content
+    xtree = et.fromstring(xml_data)
+    for i in xtree.findall(".//"):
+        if 'DonorAdvisedFundInd' in i.tag:
+            if i.text is not "0":
+                print(i.text)  
+            else: 
+                print("THIS IS A 0")
+    a = a + 1
+    
