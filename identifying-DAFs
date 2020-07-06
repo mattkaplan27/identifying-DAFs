@@ -1,12 +1,25 @@
 import pandas as pd
-url_2020 = "index_2020.csv"
-df_2020 = pd.read_csv(url_2020)
-df_2020 = df_2020[["RETURN_TYPE","OBJECT_ID"]]
-xml_links = []
-for i in df_2020["OBJECT_ID"]:
-    xml_links.append("https://s3.amazonaws.com/irs-form-990/{}_public.xml".format(i))
-xml_links[0]
 
+url = ["index_2020.csv","index_2019.csv","index_2018.csv","index_2017.csv","index_2016.csv","index_2015.csv","index_2014.csv","index_2013.csv","index_2012.csv","index_2011.csv"]
+
+df_2020 = pd.read_csv(url[0])   #opens all of the index csv files and assigns each one to an individual pandas dataframe
+df_2019 = pd.read_csv(url[1])
+df_2018 = pd.read_csv(url[2])
+df_2017 = pd.read_csv(url[3])
+df_2016 = pd.read_csv(url[4])
+df_2015 = pd.read_csv(url[5])
+df_2014 = pd.read_csv(url[6])
+df_2013 = pd.read_csv(url[7])
+df_2012 = pd.read_csv(url[8])
+df_2011 = pd.read_csv(url[9])
+
+df_total = pd.concat([df_2020, df_2019, df_2018, df_2017, df_2016, df_2015, df_2014, df_2013, df_2012, df_2011], sort=False)
+df_total = df_total[["OBJECT_ID"]]   #combines the individual dataframes into one whole and isolates the OBJECT_ID value
+
+xml_links = []
+for i in df_total["OBJECT_ID"]:   #scans all of the IDs in the list and puts them into link format
+    xml_links.append("https://s3.amazonaws.com/irs-form-990/{}_public.xml".format(i))
+   #this produces a list of approximately 3.2 million AWS links, which all lead to a unique 990 file
 
 
 
@@ -14,19 +27,20 @@ import xml.etree.ElementTree as et
 import requests
 
 df_rows = []
-df_cols = ["link"]
+df_cols = ["link (DAF)"]
 
 a = 0
-for i in xml_links:
+for i in xml_links:   #uses a for loop to open each link and read thru the contents of the XML file
     xml_data = requests.get(xml_links[a]).content
     xtree = et.fromstring(xml_data)
     for i in xtree.findall(".//"):
-        if 'DonorAdvisedFundInd' in i.tag:
-            if i.text is "1":
+        if 'DonorAdvisedFundInd' in i.tag:   #checks for the <DonorAdvisedFundInd> value
+            if i.text is "1":   #if the value is 1 (it is a DAF) the AWS link is printed to console and added to a final dataframe
                 df_rows.append({"link":xml_links[a]})
                 print(xml_links[a])
-            elif i.text is "0" or "false":
+            elif i.text is "0" or "false":   #if the value is 0 (not a DAF) the link is passed
                 pass
     a = a + 1
 out_df = pd.DataFrame(df_rows, columns = df_cols)
 out_df
+   #creates and prints a pandas dataframe that contains links to all the 990 filings that filed true for DAF
